@@ -1,8 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "vJQo+DfJPyE=",
+  "dgSpecHash": "f935olZsRms=",
   "success": true,
-  "projectFilePath": "C:\\Users\\chinm\\desktop\\summer projects\\levelEditor\\LevelEditor\\LevelEditor.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "C:\\Users\\chinm\\Desktop\\Summer Projects\\LevelEditor\\LevelEditor\\LevelEditor.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\chinm\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.2\\communitytoolkit.mvvm.8.4.2.nupkg.sha512",
+    "C:\\Users\\chinm\\.nuget\\packages\\microsoft.xaml.behaviors.wpf\\1.1.142\\microsoft.xaml.behaviors.wpf.1.1.142.nupkg.sha512",
+    "C:\\Users\\chinm\\.nuget\\packages\\system.io.pipelines\\10.0.8\\system.io.pipelines.10.0.8.nupkg.sha512",
+    "C:\\Users\\chinm\\.nuget\\packages\\system.text.encodings.web\\10.0.8\\system.text.encodings.web.10.0.8.nupkg.sha512",
+    "C:\\Users\\chinm\\.nuget\\packages\\system.text.json\\10.0.8\\system.text.json.10.0.8.nupkg.sha512"
+  ],
   "logs": []
 }

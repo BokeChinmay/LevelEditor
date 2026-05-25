@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\chinm\\desktop\\summer projects\\levelEditor\\LevelEditor\\LevelEditor.csproj": {}
+    "C:\\Users\\chinm\\Desktop\\Summer Projects\\LevelEditor\\LevelEditor\\LevelEditor.csproj": {}
   },
   "projects": {
-    "C:\\Users\\chinm\\desktop\\summer projects\\levelEditor\\LevelEditor\\LevelEditor.csproj": {
+    "C:\\Users\\chinm\\Desktop\\Summer Projects\\LevelEditor\\LevelEditor\\LevelEditor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\chinm\\desktop\\summer projects\\levelEditor\\LevelEditor\\LevelEditor.csproj",
+        "projectUniqueName": "C:\\Users\\chinm\\Desktop\\Summer Projects\\LevelEditor\\LevelEditor\\LevelEditor.csproj",
         "projectName": "LevelEditor",
-        "projectPath": "C:\\Users\\chinm\\desktop\\summer projects\\levelEditor\\LevelEditor\\LevelEditor.csproj",
+        "projectPath": "C:\\Users\\chinm\\Desktop\\Summer Projects\\LevelEditor\\LevelEditor\\LevelEditor.csproj",
         "packagesPath": "C:\\Users\\chinm\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\chinm\\desktop\\summer projects\\levelEditor\\LevelEditor\\obj\\",
+        "outputPath": "C:\\Users\\chinm\\Desktop\\Summer Projects\\LevelEditor\\LevelEditor\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -49,6 +49,20 @@
       "frameworks": {
         "net9.0-windows7.0": {
           "targetAlias": "net9.0-windows",
+          "dependencies": {
+            "CommunityToolkit.Mvvm": {
+              "target": "Package",
+              "version": "[8.4.2, )"
+            },
+            "Microsoft.Xaml.Behaviors.Wpf": {
+              "target": "Package",
+              "version": "[1.1.142, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[10.0.8, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
