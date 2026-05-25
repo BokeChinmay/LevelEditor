@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -33,6 +34,30 @@ public partial class EditorViewModel : ObservableObject
 
     public bool CanUndo => _history.CanUndo;
     public bool CanRedo => _history.CanRedo;
+
+    public string ZoomText => $"Zoom: {Zoom:P0}";
+
+    public string SelectedTileName => IsEntityMode 
+        ? (SelectedEntity?.Name ?? "None")
+        : (SelectedTile?.Name ?? "None");
+    
+    public string SelectedTileColor => IsEntityMode 
+        ? (SelectedEntity?.Color ?? "#808080")
+        : (SelectedTile?.Color ?? "#808080");
+
+    public Visibility TilePaletteVisibility => 
+        IsEntityMode ? Visibility.Collapsed : Visibility.Visible;
+    
+    public Visibility EntityPaletteVisibility => 
+        IsEntityMode ? Visibility.Visible : Visibility.Collapsed;
+    
+    public Visibility EntityPropertiesVisibility => 
+        SelectedEntityPlacement != null ? Visibility.Visible : Visibility.Collapsed;
+
+    public List<KeyValuePair<string, string>> SelectedEntityProperties => 
+        SelectedEntityPlacement?.Properties.Select(kvp => kvp).ToList() ?? new();
+
+    public event Action? LevelChanged;
 
     public EditorViewModel()
     {
@@ -73,6 +98,7 @@ public partial class EditorViewModel : ObservableObject
         }
 
         StatusText = $"Painted {SelectedTile?.Name} at ({gridX}, {gridY})";
+        NotifyLevelChanged();
     }
 
     public void PlaceEntity(int gridX, int gridY)
@@ -92,6 +118,7 @@ public partial class EditorViewModel : ObservableObject
         var cmd = new PlaceEntityCommand(Level.Entities, entity);
         _history.Execute(cmd);
         StatusText = $"Placed {SelectedEntity.Name} at ({gridX}, {gridY})";
+        NotifyLevelChanged();
     }
 
     [RelayCommand]
@@ -99,6 +126,7 @@ public partial class EditorViewModel : ObservableObject
     {
         _history.Undo();
         StatusText = $"Undid: {_history.NextUndoDescription ?? "nothing"}";
+        NotifyLevelChanged();
     }
 
     [RelayCommand]
@@ -106,6 +134,7 @@ public partial class EditorViewModel : ObservableObject
     {
         _history.Redo();
         StatusText = $"Redid action";
+        NotifyLevelChanged();
     }
 
     [RelayCommand]
@@ -184,5 +213,33 @@ public partial class EditorViewModel : ObservableObject
     private void UpdateWindowTitle()
     {
         WindowTitle = $"Level Editor - {Level.Name}{(IsDirty ? " *" : "")}";
+    }
+
+    private void NotifyLevelChanged() => LevelChanged?.Invoke();
+
+    partial void OnIsEntityModeChanged(bool value) {
+        OnPropertyChanged(nameof(TilePaletteVisibility));
+        OnPropertyChanged(nameof(EntityPaletteVisibility));
+        OnPropertyChanged(nameof(SelectedTileName));
+        OnPropertyChanged(nameof(SelectedTileColor));
+    }
+
+    partial void OnZoomChanged(double value) {
+        OnPropertyChanged(nameof(ZoomText));
+    }
+
+    partial void OnSelectedTileChanged(TileDefinition? value) {
+        OnPropertyChanged(nameof(SelectedTileName));
+        OnPropertyChanged(nameof(SelectedTileColor));
+    }
+
+    partial void OnSelectedEntityChanged(EntityDefinition? value) {
+        OnPropertyChanged(nameof(SelectedTileName));
+        OnPropertyChanged(nameof(SelectedTileColor));
+    }
+
+    partial void OnSelectedEntityPlacementChanged(EntityPlacement? value) {
+        OnPropertyChanged(nameof(EntityPropertiesVisibility));
+        OnPropertyChanged(nameof(SelectedEntityProperties));
     }
 }
