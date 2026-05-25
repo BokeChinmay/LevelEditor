@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace LevelEditor.Models;
 
 public class LevelDocument {
@@ -57,13 +59,25 @@ public class LevelMetadata {
     public string GameVersion { get; set; } = "1.0";
 }
 
-public class TileDefinition {
+public class TileDefinition : INotifyPropertyChanged{
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Category { get; set; } = "";
     public string Color { get; set; } = "#808080";
     public bool IsSolid { get; set; } = false;
     public bool IsOneWay { get; set; } = false;
+
+    private bool _isSelected = false;
+    public bool IsSelected {
+        get => _isSelected;
+        set {
+            if (_isSelected == value) return;
+            _isSelected = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
 
 public class EntityDefinition {

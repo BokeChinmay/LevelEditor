@@ -18,6 +18,7 @@
         <KeyBinding Command="{Binding SaveLevelCommand}" Key="S" Modifiers="Ctrl" />
         <KeyBinding Command="{Binding OpenLevelCommand}" Key="O" Modifiers="Ctrl" />
         <KeyBinding Command="{Binding NewLevelCommand}" Key="N" Modifiers="Ctrl" />
+        <KeyBinding Command="{Binding ExportForUnityCommand}" Key="E" Modifiers="Ctrl" />
     </Window.InputBindings>
 
     <DockPanel>
@@ -76,16 +77,27 @@
                                     <Button Click="TileButton_Click"
                                             Tag="{Binding}"
                                             Margin="4,2"
-                                            Background="Transparent"
-                                            BorderThickness="0"
+                                            BorderThickness="2"
                                             HorizontalContentAlignment="Left">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="#D4D4D4"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="Background" Value="#094771"/>
+                                                        <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
                                         <StackPanel Orientation="Horizontal" Margin="2">
                                             <Border Width="18" Height="18"
                                                     Background="{Binding Color}"
                                                     CornerRadius="2"
                                                     Margin="0,0,6,0"/>
                                             <TextBlock Text="{Binding Name}"
-                                                       Foreground="#D4D4D4"
                                                        FontSize="12"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -193,16 +205,31 @@
                             <ItemsControl ItemsSource="{Binding Level.Layers}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Click="LayerButton_Click"
-                                                Tag="{Binding}"
-                                                Margin="0,2"
-                                                Background="#3C3C3C"
-                                                Foreground="White"
-                                                BorderBrush="#555"
-                                                HorizontalContentAlignment="Left"
-                                                Padding="6,4">
-                                            <TextBlock Text="{Binding Name}" FontSize="12"/>
-                                        </Button>
+                                        <Grid Margin="0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="28"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    Click="LayerButton_Click"
+                                                    Tag="{Binding}"
+                                                    Background="#3C3C3C"
+                                                    Foreground="White"
+                                                    BorderBrush="#555"
+                                                    HorizontalContentAlignment="Left"
+                                                    Padding="6,4">
+                                                <TextBlock Text="{Binding Name}" FontSize="12"/>
+                                            </Button>
+                                            <ToggleButton Grid.Column="1"
+                                                          IsChecked="{Binding IsVisible}"
+                                                          Content="👁" 
+                                                          FontSize="11"
+                                                          Background="#3C3C3C" 
+                                                          BorderBrush="#555"
+                                                          Click="LayerVisibility_Click"
+                                                          Tag="{Binding}"
+                                                          ToolTip="Toggle visibility"/>
+                                        </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -233,9 +260,21 @@
                             <!-- Entity properties (visible when entity selected) -->
                             <StackPanel Visibility="{Binding EntityPropertiesVisibility}">
                                 <Separator Background="#3F3F46" Margin="0,0,0,8"/>
-                                <TextBlock Text="Entity Properties" FontWeight="Bold"
-                                           Foreground="#569CD6" FontSize="12" Margin="0,0,0,6"/>
-                                <ItemsControl ItemsSource="{Binding SelectedEntityProperties}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Entity Properties" 
+                                               FontWeight="Bold" Foreground="#569CD6" 
+                                               FontSize="12" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Content="🗑 Delete"
+                                            Click="DeleteEntity_Click"
+                                            Background="#6B1C1C" Foreground="White"
+                                            BorderBrush="#8B2222" Padding="6,2"
+                                            FontSize="11"/>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding EntityProperties}" Margin="0,8,0,0">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Margin="0,0,0,6">
@@ -249,7 +288,6 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </StackPanel>
-
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>

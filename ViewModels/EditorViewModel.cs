@@ -26,6 +26,7 @@ public partial class EditorViewModel : ObservableObject
     [ObservableProperty] private string _statusText = "Ready";
     [ObservableProperty] private bool _isDirty = false;
     [ObservableProperty] private string _windowTitle = "Level Editor — Untitled";
+    [ObservableProperty] private ObservableCollection<EntityProperty> _entityProperties = new();
 
     public ObservableCollection<TileDefinition> TileDefinitions { get; } = new();
     public ObservableCollection<EntityDefinition> EntityDefinitions { get; } = new();
@@ -47,6 +48,9 @@ public partial class EditorViewModel : ObservableObject
 
     public Visibility TilePaletteVisibility => 
         IsEntityMode ? Visibility.Collapsed : Visibility.Visible;
+
+    public TileDefinition? HighlightedTile => SelectedTile;
+    public TileLayer? HighlightedLayer => ActiveLayer;
     
     public Visibility EntityPaletteVisibility => 
         IsEntityMode ? Visibility.Visible : Visibility.Collapsed;
@@ -78,6 +82,8 @@ public partial class EditorViewModel : ObservableObject
         };
 
         SelectedTile = TileDefinitions.First();
+
+        StatusText = "Ready | Left click: paint | Shift+click: fill | Right drag: pan | Scroll: zoom | 1-3: layers | E: eraser";
     }
 
     public void PaintTile(int gridX, int gridY)
@@ -118,6 +124,59 @@ public partial class EditorViewModel : ObservableObject
         var cmd = new PlaceEntityCommand(Level.Entities, entity);
         _history.Execute(cmd);
         StatusText = $"Placed {SelectedEntity.Name} at ({gridX}, {gridY})";
+        NotifyLevelChanged();
+    }
+
+    public void FloodFill(int startX, int startY)
+    {
+        if (ActiveLayer == null || SelectedTile == null) return;
+        if (SelectedTile.Id == "eraser") return;
+        if (startX < 0 || startX >= Level.Width ||
+            startY < 0 || startY >= Level.Height) return;
+
+        var targetTileId = ActiveLayer.GetTile(startX, startY)?.TileId ?? "";
+        var fillTileId = SelectedTile.Id;
+
+        if (targetTileId == fillTileId) return;
+
+        var commands = new List<LevelEditor.Commands.IEditorCommand>();
+        var visited = new HashSet<string>();
+        var queue = new Queue<(int x, int y)>();
+        queue.Enqueue((startX, startY));
+
+        while (queue.Count > 0) {
+            var (x, y) = queue.Dequeue();
+            var key = $"{x},{y}";
+
+            if (visited.Contains(key)) continue;
+            if (x < 0 || x >= Level.Width || y < 0 || y >= Level.Height) continue;
+
+            var currentId = ActiveLayer.GetTile(x, y)?.TileId ?? "";
+            if (currentId != targetTileId) continue;
+
+            visited.Add(key);
+            var placement = new TilePlacement { TileId = fillTileId };
+            commands.Add(new LevelEditor.Commands.PlaceTileCommand(
+                ActiveLayer, x, y, placement));
+
+            queue.Enqueue((x + 1, y));
+            queue.Enqueue((x - 1, y));
+            queue.Enqueue((x, y + 1));
+            queue.Enqueue((x, y - 1));
+        }
+
+        if (commands.Count == 0) return;
+
+        var batch = new LevelEditor.Commands.BatchCommand(
+            commands, $"Flood fill with {fillTileId}");
+        _history.Execute(batch);
+        NotifyLevelChanged();
+        StatusText = $"Filled {commands.Count} tiles with {SelectedTile.Name}";
+    }
+
+    public void ExecuteCommand(LevelEditor.Commands.IEditorCommand command) 
+    {
+        _history.Execute(command);
         NotifyLevelChanged();
     }
 
@@ -229,6 +288,8 @@ public partial class EditorViewModel : ObservableObject
     }
 
     partial void OnSelectedTileChanged(TileDefinition? value) {
+        foreach (var tile in TileDefinitions)
+            tile.IsSelected = tile == value;
         OnPropertyChanged(nameof(SelectedTileName));
         OnPropertyChanged(nameof(SelectedTileColor));
     }
@@ -240,6 +301,17 @@ public partial class EditorViewModel : ObservableObject
 
     partial void OnSelectedEntityPlacementChanged(EntityPlacement? value) {
         OnPropertyChanged(nameof(EntityPropertiesVisibility));
-        OnPropertyChanged(nameof(SelectedEntityProperties));
+
+        EntityProperties.Clear();
+        if(value == null) return;
+
+        foreach (var kvp in value.Properties) {
+            var prop = new EntityProperty(kvp.Key, kvp.Value);
+            prop.PropertyChanged += (s, e) => {
+                if (s is EntityProperty ep) 
+                    value.Properties[ep.Key] = ep.Value;
+            };
+            EntityProperties.Add(prop);
+        }
     }
 }

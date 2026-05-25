@@ -111,11 +111,30 @@ public partial class MainWindow : Window
             _vm.PlaceEntity(gridX, gridY);
             RedrawEntities();
         }
+        else if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) {
+            _vm.FloodFill(gridX, gridY);
+            RedrawCanvas();
+        }
         else
         {
             _vm.PaintTile(gridX, gridY);
             RedrawTileAt(gridX, gridY);
         }
+    }
+
+    private void LayerVisibility_Click(object sender, RoutedEventArgs e) 
+    {
+        RedrawCanvas();
+    }
+
+    private void DeleteEntity_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm.SelectedEntityPlacement == null) return;
+        var cmd = new LevelEditor.Commands.RemoveEntityCommand(
+            _vm.Level.Entities, _vm.SelectedEntityPlacement);
+        _vm.ExecuteCommand(cmd);
+        _vm.SelectedEntityPlacement = null;
+        RedrawEntities();
     }
 
     private (int x, int y) ScreenToGrid(Point canvasPos)
@@ -349,5 +368,42 @@ public partial class MainWindow : Window
     {
         if (sender is Button btn && btn.Tag is TileLayer layer)
             _vm.ActiveLayer = layer;
+    }
+
+    //Key Handlers
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+
+        switch (e.Key)
+        {
+            case Key.D1:
+            case Key.NumPad1:
+                if (_vm.Level.Layers.Count > 0)
+                    _vm.ActiveLayer = _vm.Level.Layers[0];
+                break;
+            case Key.D2:
+            case Key.NumPad2:
+                if (_vm.Level.Layers.Count > 1)
+                    _vm.ActiveLayer = _vm.Level.Layers[1];
+                break;
+            case Key.D3:
+            case Key.NumPad3:
+                if (_vm.Level.Layers.Count > 2)
+                    _vm.ActiveLayer = _vm.Level.Layers[2];
+                break;
+            case Key.E:
+                if (!e.IsRepeat) {
+                    var eraser = _vm.TileDefinitions
+                    .FirstOrDefault(t => t.Id == "eraser");
+                    if (eraser != null) _vm.SelectedTile = eraser;
+                    _vm.IsEntityMode = false;
+                }
+                break;
+            case Key.Escape:
+                _vm.SelectedEntityPlacement = null;
+                _vm.IsEntityMode = false;
+                break;
+        }
     }
 }
