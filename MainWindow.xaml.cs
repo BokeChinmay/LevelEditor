@@ -163,6 +163,26 @@ public partial class MainWindow : Window
         var height = _vm.Level.Height;
         var gridColor = new SolidColorBrush(Color.FromArgb(60, 255, 255, 255));
 
+        if (_vm.ShowCoordinates)
+        {
+            for (int x = 0; x < _vm.Level.Width; x += 5)
+            {
+                for (int y = 0; y < _vm.Level.Height; y += 5)
+                {
+                    var label = new TextBlock
+                    {
+                        Text = $"{x},{y}",
+                        FontSize = 8,
+                        Foreground = new SolidColorBrush(
+                            Color.FromArgb(120, 255, 255, 255))
+                    };
+                    Canvas.SetLeft(label, x * tileSize + 2);
+                    Canvas.SetTop(label, y * tileSize + 2);
+                    EditorCanvas.Children.Add(label);
+                }
+            }
+        }
+
         // Vertical lines
         for (int x = 0; x <= width; x++)
         {
@@ -398,6 +418,33 @@ public partial class MainWindow : Window
 
             UpdateButtonHighlights(child, selected);
         }
+    }
+
+    private void ShowAbout_Click(object sender, RoutedEventArgs e)
+    {
+        new LevelEditor.Views.AboutDialog { Owner = this }.ShowDialog();
+    }
+
+    private void ShowShortcuts_Click(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show(
+            "Keyboard Shortcuts\n\n" +
+            "Ctrl+N       New level\n" +
+            "Ctrl+O       Open level\n" +
+            "Ctrl+S       Save level\n" +
+            "Ctrl+E       Export for Unity\n" +
+            "Ctrl+Z       Undo\n" +
+            "Ctrl+Y       Redo\n\n" +
+            "1 / 2 / 3    Switch layer\n" +
+            "E            Select eraser\n" +
+            "Escape       Deselect entity\n\n" +
+            "Left click   Paint tile / place entity\n" +
+            "Shift+click  Flood fill\n" +
+            "Right drag   Pan canvas\n" +
+            "Scroll       Zoom in/out",
+            "Keyboard Shortcuts",
+            MessageBoxButton.OK,
+            MessageBoxImage.None);
     }
 
     //Key Handlers

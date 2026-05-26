@@ -31,6 +31,7 @@ public partial class EditorViewModel : ObservableObject
     [ObservableProperty] private string _windowTitle = "Level Editor — Untitled";
     [ObservableProperty] private ObservableCollection<EntityProperty> _entityProperties = new();
     [ObservableProperty] private ObservableCollection<string> _recentFiles = new();
+    [ObservableProperty] private bool _showCoordinates = false;
 
     public ObservableCollection<TileDefinition> TileDefinitions { get; } = new();
     public ObservableCollection<EntityDefinition> EntityDefinitions { get; } = new();
@@ -431,5 +432,10 @@ public partial class EditorViewModel : ObservableObject
             };
             EntityProperties.Add(prop);
         }
+    }
+
+    partial void OnShowCoordinatesChanged(bool value)
+    {
+        NotifyLevelChanged();
     }
 }
