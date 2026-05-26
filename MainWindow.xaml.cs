@@ -357,17 +357,47 @@ public partial class MainWindow : Window
 
     private void EntityButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button btn && btn.Tag is EntityDefinition entity)
-        {
-            _vm.SelectedEntity = entity;
-            _vm.IsEntityMode = true;
-        }
+        var btn = sender as Button;
+        var entity = btn?.Tag as EntityDefinition;
+
+        if(btn == null || entity == null) return;
+        //if (sender is not Button btn && btn.Tag is not EntityDefinition entity) return;
+        
+        _vm.SelectedEntity = entity;
+        _vm.IsEntityMode = true;
+
+        UpdateEntityButtonHighlights(entity);
     }
 
     private void LayerButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is TileLayer layer)
             _vm.ActiveLayer = layer;
+    }
+
+    private void UpdateEntityButtonHighlights(EntityDefinition selected)
+    {
+        UpdateButtonHighlights(EntityPaletteItems, selected);
+    }
+
+    private void UpdateButtonHighlights(DependencyObject parent, EntityDefinition selected)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+
+            if (child is Button btn && btn.Tag is EntityDefinition entity)
+            {
+                btn.Background = entity == selected
+                    ? new SolidColorBrush(Color.FromRgb(9, 71, 113))
+                    : Brushes.Transparent;
+                btn.BorderBrush = entity == selected
+                    ? new SolidColorBrush(Color.FromRgb(0, 122, 204))
+                    : Brushes.Transparent;
+            }
+
+            UpdateButtonHighlights(child, selected);
+        }
     }
 
     //Key Handlers
@@ -403,6 +433,28 @@ public partial class MainWindow : Window
             case Key.Escape:
                 _vm.SelectedEntityPlacement = null;
                 _vm.IsEntityMode = false;
+                break;
+        }
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e) {
+        base.OnClosing(e);
+
+        if(!_vm.IsDirty) return;
+
+        var result = MessageBox.Show(
+                "You have unsaved changes. Save before closing?",
+                "Unsaved Changed",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Warning);
+        
+        switch (result) 
+        {
+            case MessageBoxResult.Yes:
+                _vm.SaveLevelCommand.Execute(null);
+                break;
+            case MessageBoxResult.Cancel:
+                e.Cancel = true;
                 break;
         }
     }

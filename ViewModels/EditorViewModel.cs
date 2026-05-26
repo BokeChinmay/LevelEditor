@@ -1,4 +1,5 @@
 using System.Windows;
+using System.IO;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -13,6 +14,8 @@ public partial class EditorViewModel : ObservableObject
     private readonly LevelSerializer _serializer = new();
     private readonly CommandHistory _history = new();
     private string? _currentFilePath;
+    private const int MaxRecentFiles = 8;
+    private readonly string _recentFilesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LevelEditor", "recent.json");
 
     [ObservableProperty] private LevelDocument _level = LevelDocument.CreateDefault();
     [ObservableProperty] private TileLayer? _activeLayer;
@@ -27,6 +30,7 @@ public partial class EditorViewModel : ObservableObject
     [ObservableProperty] private bool _isDirty = false;
     [ObservableProperty] private string _windowTitle = "Level Editor — Untitled";
     [ObservableProperty] private ObservableCollection<EntityProperty> _entityProperties = new();
+    [ObservableProperty] private ObservableCollection<string> _recentFiles = new();
 
     public ObservableCollection<TileDefinition> TileDefinitions { get; } = new();
     public ObservableCollection<EntityDefinition> EntityDefinitions { get; } = new();
@@ -84,6 +88,8 @@ public partial class EditorViewModel : ObservableObject
         SelectedTile = TileDefinitions.First();
 
         StatusText = "Ready | Left click: paint | Shift+click: fill | Right drag: pan | Scroll: zoom | 1-3: layers | E: eraser";
+
+        LoadRecentFiles();
     }
 
     public void PaintTile(int gridX, int gridY)
@@ -199,6 +205,16 @@ public partial class EditorViewModel : ObservableObject
     [RelayCommand]
     private void NewLevel()
     {
+        if (IsDirty) {
+            var result = System.Windows.MessageBox.Show(
+                "You have unsaved changes. Create new level anyway?",
+                "Unsaved Changes",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (result != System.Windows.MessageBoxResult.Yes) return;
+        }
+
         Level = LevelDocument.CreateDefault();
         ActiveLayer = Level.Layers.First();
         _history.Clear();
@@ -206,6 +222,7 @@ public partial class EditorViewModel : ObservableObject
         IsDirty = false;
         UpdateWindowTitle();
         StatusText = "New level created";
+        NotifyLevelChanged();
     }
 
     [RelayCommand]
@@ -216,6 +233,7 @@ public partial class EditorViewModel : ObservableObject
         IsDirty = false;
         UpdateWindowTitle();
         StatusText = $"Saved to {_currentFilePath}";
+        AddToRecentFiles(_currentFilePath);
     }
 
     [RelayCommand]
@@ -252,6 +270,7 @@ public partial class EditorViewModel : ObservableObject
         IsDirty = false;
         UpdateWindowTitle();
         StatusText = $"Opened {_currentFilePath}";
+        AddToRecentFiles(_currentFilePath);
     }
 
     [RelayCommand]
@@ -269,12 +288,109 @@ public partial class EditorViewModel : ObservableObject
         StatusText = $"Exported for Unity to {dialog.FileName}";
     }
 
+    [RelayCommand]
+    private void OpenRecentFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            System.Windows.MessageBox.Show(
+                $"File not found:\n{filePath}",
+                "File Not Found",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            RecentFiles.Remove(filePath);
+            SaveRecentFiles();
+            return;
+        }
+
+        _currentFilePath = filePath;
+        Level = _serializer.Load(filePath);
+        ActiveLayer = Level.Layers.FirstOrDefault();
+        _history.Clear();
+        IsDirty = false;
+        AddToRecentFiles(filePath);
+        UpdateWindowTitle();
+        StatusText = $"Opened {filePath}";
+        NotifyLevelChanged();
+    }
+
+    [RelayCommand]
+    private void ResizeLevel()
+    {
+        // Clamp to reasonable bounds
+        Level.Width = Math.Clamp(Level.Width, 5, 200);
+        Level.Height = Math.Clamp(Level.Height, 5, 200);
+
+        // Remove any tiles outside the new bounds
+        foreach (var layer in Level.Layers)
+        {
+            var keysToRemove = layer.Tiles.Keys
+                .Where(k =>
+                {
+                    var parts = k.Split(',');
+                    if (parts.Length != 2) return true;
+                    return !int.TryParse(parts[0], out var x) ||
+                        !int.TryParse(parts[1], out var y) ||
+                        x >= Level.Width || y >= Level.Height;
+                }).ToList();
+
+            foreach (var key in keysToRemove)
+                layer.Tiles.Remove(key);
+        }
+
+        // Remove entities outside bounds
+        Level.Entities.RemoveAll(e =>
+            e.GridX >= Level.Width || e.GridY >= Level.Height);
+
+        IsDirty = true;
+        NotifyLevelChanged();
+        StatusText = $"Level resized to {Level.Width}x{Level.Height}";
+    }
+
     private void UpdateWindowTitle()
     {
         WindowTitle = $"Level Editor - {Level.Name}{(IsDirty ? " *" : "")}";
     }
 
     private void NotifyLevelChanged() => LevelChanged?.Invoke();
+
+    private void LoadRecentFiles()
+    {
+        try
+        {
+            if (!File.Exists(_recentFilesPath)) return;
+            var json = File.ReadAllText(_recentFilesPath);
+            var files = System.Text.Json.JsonSerializer
+                .Deserialize<List<string>>(json) ?? new();
+
+            RecentFiles.Clear();
+            foreach (var f in files.Where(File.Exists).Take(MaxRecentFiles))
+                RecentFiles.Add(f);
+        }
+        catch { }
+    }
+
+    private void SaveRecentFiles()
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(_recentFilesPath)!;
+            Directory.CreateDirectory(dir);
+            var json = System.Text.Json.JsonSerializer.Serialize(
+                RecentFiles.ToList());
+            File.WriteAllText(_recentFilesPath, json);
+        }
+        catch { }
+    }
+
+    private void AddToRecentFiles(string filePath)
+    {
+        RecentFiles.Remove(filePath);
+        RecentFiles.Insert(0, filePath);
+        while (RecentFiles.Count > MaxRecentFiles)
+            RecentFiles.RemoveAt(RecentFiles.Count - 1);
+        SaveRecentFiles();
+    }
 
     partial void OnIsEntityModeChanged(bool value) {
         OnPropertyChanged(nameof(TilePaletteVisibility));
@@ -295,6 +411,8 @@ public partial class EditorViewModel : ObservableObject
     }
 
     partial void OnSelectedEntityChanged(EntityDefinition? value) {
+        foreach (var entity in EntityDefinitions) 
+            entity.IsSelected = entity == value;
         OnPropertyChanged(nameof(SelectedTileName));
         OnPropertyChanged(nameof(SelectedTileColor));
     }

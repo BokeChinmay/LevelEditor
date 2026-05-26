@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace LevelEditor.Models;
 
@@ -59,7 +60,7 @@ public class LevelMetadata {
     public string GameVersion { get; set; } = "1.0";
 }
 
-public class TileDefinition : INotifyPropertyChanged{
+public partial class TileDefinition : ObservableObject {
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Category { get; set; } = "";
@@ -67,25 +68,43 @@ public class TileDefinition : INotifyPropertyChanged{
     public bool IsSolid { get; set; } = false;
     public bool IsOneWay { get; set; } = false;
 
-    private bool _isSelected = false;
-    public bool IsSelected {
-        get => _isSelected;
-        set {
-            if (_isSelected == value) return;
-            _isSelected = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
-        }
-    }
+    // private bool _isSelected = false;
+    // public bool IsSelected {
+    //     get => _isSelected;
+    //     set {
+    //         if (_isSelected == value) return;
+    //         _isSelected = value;
+    //         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+    //     }
+    // }
 
-    public event PropertyChangedEventHandler? PropertyChanged;
+    // public event PropertyChangedEventHandler? PropertyChanged;
+
+    [ObservableProperty]
+    private bool _isSelected = false;
 }
 
-public class EntityDefinition {
+public partial class EntityDefinition : ObservableObject {
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Category { get; set; } = "";
     public string Color { get; set; } = "#FF0000";
     public List<PropertyDefinition> Properties { get; set; } = new();
+
+    // private bool _isSelected = false;
+    // public bool IsSelected { 
+    //     get => _isSelected;
+    //     set {
+    //         if(_isSelected == value) return;
+    //         _isSelected = value;
+    //         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+    //     }
+    // }
+
+    // public event PropertyChangedEventHandler? PropertyChanged;
+
+    [ObservableProperty]
+    private bool _isSelected = false;
 }
 
 public class PropertyDefinition {
